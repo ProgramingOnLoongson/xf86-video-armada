@@ -26,7 +26,7 @@
 #define ARMADA_NAME		"armada"
 #define ARMADA_DRIVER_NAME	"armada"
 
-#define DRM_MODULE_NAMES	"armada-drm", "imx-drm"
+#define DRM_MODULE_NAMES	"armada-drm", "imx-drm", "loongson-drm"
 #define DRM_DEFAULT_BUS_ID	NULL
 
 static const char *drm_module_names[] = { DRM_MODULE_NAMES };
@@ -40,6 +40,11 @@ static SymTabRec armada_chipsets[] = {
 
 static SymTabRec ipu_chipsets[] = {
 	{  0, "i.MX6" },
+	{ -1, NULL }
+};
+
+static SymTabRec loongson7a_chipsets[] = {
+	{  0, "7A1000" },
 	{ -1, NULL }
 };
 
@@ -115,6 +120,8 @@ static void armada_identify(int flags)
 			  armada_chipsets);
 	xf86PrintChipsets(ARMADA_NAME, "Support for Freescale IPU",
 			  ipu_chipsets);
+        xf86PrintChipsets(ARMADA_NAME, "Support for Loongson 7a1000 display controller",
+			  loongson7a_chipsets);
 }
 
 static void armada_init_screen(ScrnInfoPtr pScrn)

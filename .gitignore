@@ -28,6 +28,7 @@ m4
 *.orig
 *.rej
 *.swp
+tags
 *~
 \#*#
 stamp-*

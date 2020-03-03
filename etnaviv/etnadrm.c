@@ -282,30 +282,20 @@ static void etnadrm_convert_timeout(struct drm_etnaviv_timespec *ts,
 
 int viv_fence_finish(struct viv_conn *conn, uint32_t fence, uint32_t timeout)
 {
-	unsigned int api_date = to_etna_viv_conn(conn)->api_date;
-	union req {
-		struct drm_etnaviv_wait_fence_r20151126 r20151126;
-		struct drm_etnaviv_wait_fence_r20130625 r20130625;
-	} req;
-	int ret;
+        int ret;
 
-	if (api_date < ETNAVIV_DATE_PENGUTRONIX3) {
-		memset(&req, 0, sizeof(req.r20130625));
-		req.r20130625.pipe = to_etna_viv_conn(conn)->etnadrm_pipe;
-		req.r20130625.fence = fence;
-		etnadrm_convert_timeout(&req.r20130625.timeout, timeout);
-		ret = drmCommandWrite(conn->fd, DRM_ETNAVIV_WAIT_FENCE,
-				      &req.r20130625, sizeof(req.r20130625));
-	} else {
-		memset(&req, 0, sizeof(req.r20151126));
-		req.r20151126.pipe = to_etna_viv_conn(conn)->etnadrm_pipe;
-		req.r20151126.fence = fence;
-		if (timeout == 0)
-			req.r20151126.flags |= ETNA_WAIT_NONBLOCK;
-		etnadrm_convert_timeout(&req.r20151126.timeout, timeout);
-		ret = drmCommandWrite(conn->fd, DRM_ETNAVIV_WAIT_FENCE,
-				      &req.r20151126, sizeof(req.r20151126));
-	}
+//	union req {
+	struct drm_etnaviv_wait_fence r20151126;
+//	} req;
+
+	memset(&r20151126, 0, sizeof(r20151126));
+	r20151126.pipe = to_etna_viv_conn(conn)->etnadrm_pipe;
+	r20151126.fence = fence;
+	if (timeout == 0)
+		r20151126.flags |= ETNA_WAIT_NONBLOCK;
+	etnadrm_convert_timeout(&r20151126.timeout, timeout);
+	ret = drmCommandWrite(conn->fd, DRM_ETNAVIV_WAIT_FENCE,
+			      &r20151126, sizeof(r20151126));
 
 	if (ret == 0)
 		conn->last_fence_id = fence;

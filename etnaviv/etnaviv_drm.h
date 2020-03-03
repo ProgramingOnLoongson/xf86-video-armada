@@ -269,14 +269,8 @@ struct drm_etnaviv_gem_submit_r20130625 {
  * mainly just exists as a way to implement the gallium pipe_fence
  * APIs without requiring a dummy bo to synchronize on.
  */
-struct drm_etnaviv_wait_fence_r20130625 {
-	uint32_t pipe;           /* in, ETNA_PIPE_x */
-	uint32_t fence;          /* in */
-	struct drm_etnaviv_timespec timeout;   /* in */
-};
-
 #define ETNA_WAIT_NONBLOCK      0x01
-struct drm_etnaviv_wait_fence_r20151126 {
+struct drm_etnaviv_wait_fence {
 	__u32 pipe;           /* in */
 	__u32 fence;          /* in */
 	__u32 flags;          /* in, mask of ETNA_WAIT_x */
@@ -284,13 +278,13 @@ struct drm_etnaviv_wait_fence_r20151126 {
 	struct drm_etnaviv_timespec timeout;   /* in */
 };
 
-#define ETNA_USERPTR_READ       0x01
-#define ETNA_USERPTR_WRITE      0x02
+#define ETNA_USERPTR_READ	0x01
+#define ETNA_USERPTR_WRITE	0x02
 struct drm_etnaviv_gem_userptr {
-	uint64_t user_ptr;	/* in, page aligned user pointer */
-	uint64_t user_size;	/* in, page aligned user size */
-	uint32_t flags; 	/* in, flags */
-	uint32_t handle;	/* out, non-zero handle */
+	__u64 user_ptr;	/* in, page aligned user pointer */
+	__u64 user_size;	/* in, page aligned user size */
+	__u32 flags;		/* in, flags */
+	__u32 handle;	/* out, non-zero handle */
 };
 
 struct drm_etnaviv_gem_wait {

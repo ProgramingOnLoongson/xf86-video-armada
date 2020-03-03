@@ -53,4 +53,5 @@ static XF86ModuleVersionInfo etnadrm_version = {
 _X_EXPORT XF86ModuleData etnadrm_gpuModuleData = {
 	.vers = &etnadrm_version,
 	.setup = etnadrm_setup,
+        .teardown = NULL,
 };

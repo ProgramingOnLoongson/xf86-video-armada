@@ -328,30 +328,18 @@ struct etna_bo {
 static int etna_bo_gem_wait(struct etna_bo *bo, uint32_t timeout)
 {
 	struct viv_conn *conn = bo->conn;
-	unsigned int api_date = to_etna_viv_conn(conn)->api_date;
 
-	union req {
-		struct drm_etnaviv_gem_wait_r20151126 r20151126;
-		struct drm_etnaviv_gem_wait_r20130625 r20130625;
-	} req;
+	struct drm_etnaviv_gem_wait r20151126;
 
-	if (api_date < ETNAVIV_DATE_PENGUTRONIX3) {
-		memset(&req, 0, sizeof(req.r20130625));
-		req.r20130625.pipe = to_etna_viv_conn(conn)->etnadrm_pipe;
-		req.r20130625.handle = bo->handle;
-		etnadrm_convert_timeout(&req.r20130625.timeout, timeout);
-		return drmCommandWrite(conn->fd, DRM_ETNAVIV_GEM_WAIT,
-				       &req.r20130625, sizeof(req.r20130625));
-	} else {
-		memset(&req, 0, sizeof(req.r20151126));
-		req.r20151126.pipe = to_etna_viv_conn(conn)->etnadrm_pipe;
-		req.r20151126.handle = bo->handle;
-		if (timeout == 0)
-			req.r20151126.flags |= ETNA_WAIT_NONBLOCK;
-		etnadrm_convert_timeout(&req.r20151126.timeout, timeout);
-		return drmCommandWrite(conn->fd, DRM_ETNAVIV_GEM_WAIT,
-				       &req.r20151126, sizeof(req.r20151126));
-	}
+	memset(&r20151126, 0, sizeof(r20151126));
+	r20151126.pipe = to_etna_viv_conn(conn)->etnadrm_pipe;
+	r20151126.handle = bo->handle;
+	if (timeout == 0)
+		r20151126.flags |= ETNA_WAIT_NONBLOCK;
+	etnadrm_convert_timeout(&r20151126.timeout, timeout);
+	return drmCommandWrite(conn->fd, DRM_ETNAVIV_GEM_WAIT,
+		        &r20151126, sizeof(r20151126));
+
 }
 
 static void etna_bo_free(struct etna_bo *bo)

@@ -23,7 +23,7 @@
 #define ETNAVIV_DATE_PENGUTRONIX2	20150910
 #define ETNAVIV_DATE_PENGUTRONIX3	20151126
 #define ETNAVIV_DATE_PENGUTRONIX4	20151214
-#define ETNAVIV_DATE			ETNAVIV_DATE_PENGUTRONIX
+#define ETNAVIV_DATE			ETNAVIV_DATE_PENGUTRONIX4
 
 #include <stddef.h>
 #include "drm.h"
@@ -45,11 +45,7 @@
 #define ETNADRM_PIPE_2D      0x01
 #define ETNADRM_PIPE_VG      0x02
 
-#if ETNAVIV_DATE == ETNAVIV_DATE_PENGUTRONIX
-#define ETNA_MAX_PIPES    4
-#else
-#define ETNA_MAX_PIPES    3
-#endif
+
 
 /* timeouts are specified in clock-monotonic absolute times (to simplify
  * restarting interrupted ioctls).  The following struct is logically the
@@ -67,6 +63,14 @@ struct drm_etnaviv_timespec {
 #define ETNAVIV_PARAM_GPU_FEATURES_2                0x05
 #define ETNAVIV_PARAM_GPU_FEATURES_3                0x06
 #define ETNAVIV_PARAM_GPU_FEATURES_4                0x07
+#define ETNAVIV_PARAM_GPU_FEATURES_5                0x08
+#define ETNAVIV_PARAM_GPU_FEATURES_6                0x09
+#define ETNAVIV_PARAM_GPU_FEATURES_7                0x0a
+#define ETNAVIV_PARAM_GPU_FEATURES_8                0x0b
+#define ETNAVIV_PARAM_GPU_FEATURES_9                0x0c
+#define ETNAVIV_PARAM_GPU_FEATURES_10               0x0d
+#define ETNAVIV_PARAM_GPU_FEATURES_11               0x0e
+#define ETNAVIV_PARAM_GPU_FEATURES_12               0x0f
 
 #define ETNAVIV_PARAM_GPU_STREAM_COUNT              0x10
 #define ETNAVIV_PARAM_GPU_REGISTER_MAX              0x11
@@ -78,6 +82,9 @@ struct drm_etnaviv_timespec {
 #define ETNAVIV_PARAM_GPU_BUFFER_SIZE               0x17
 #define ETNAVIV_PARAM_GPU_INSTRUCTION_COUNT         0x18
 #define ETNAVIV_PARAM_GPU_NUM_CONSTANTS             0x19
+#define ETNAVIV_PARAM_GPU_NUM_VARYINGS              0x1a
+
+#define ETNA_MAX_PIPES 4
 
 //#define MSM_PARAM_GMEM_SIZE  0x02
 
@@ -97,10 +104,9 @@ struct drm_etnaviv_param {
 #define ETNA_BO_CACHED       0x00010000
 #define ETNA_BO_WC           0x00020000
 #define ETNA_BO_UNCACHED     0x00040000
-#if ETNAVIV_DATE == ETNAVIV_DATE_PENGUTRONIX
 /* map flags */
 #define ETNA_BO_FORCE_MMU    0x00100000
-#endif
+
 
 struct drm_etnaviv_gem_new {
 	uint64_t size;           /* in */
@@ -287,13 +293,7 @@ struct drm_etnaviv_gem_userptr {
 	uint32_t handle;	/* out, non-zero handle */
 };
 
-struct drm_etnaviv_gem_wait_r20130625 {
-	__u32 pipe;				/* in */
-	__u32 handle;				/* in, bo to be waited for */
-	struct drm_etnaviv_timespec timeout;	/* in */
-};
-
-struct drm_etnaviv_gem_wait_r20151126 {
+struct drm_etnaviv_gem_wait {
 	__u32 pipe;				/* in */
 	__u32 handle;				/* in, bo to be waited for */
 	__u32 flags;				/* in, mask of ETNA_WAIT_x  */
@@ -311,7 +311,9 @@ struct drm_etnaviv_gem_wait_r20151126 {
 #define DRM_ETNAVIV_WAIT_FENCE         0x07
 #define DRM_ETNAVIV_GEM_USERPTR        0x08
 #define DRM_ETNAVIV_GEM_WAIT           0x09
-#define DRM_ETNAVIV_NUM_IOCTLS         0x0a
+#define DRM_ETNAVIV_PM_QUERY_DOM       0x0a
+#define DRM_ETNAVIV_PM_QUERY_SIG       0x0b
+#define DRM_ETNAVIV_NUM_IOCTLS         0x0c
 
 #define DRM_IOCTL_ETNAVIV_GET_PARAM    DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GET_PARAM, struct drm_etnaviv_param)
 #define DRM_IOCTL_ETNAVIV_GEM_NEW      DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_NEW, struct drm_etnaviv_gem_new)

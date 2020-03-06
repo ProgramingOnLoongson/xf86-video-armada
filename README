@@ -90,8 +90,7 @@ $ ETNA_SRC=$PWD/etna_viv
 $ git clone git://git.armlinux.org.uk/~rmk/xf86-video-armada.git/
 $ cd xf86-video-armada
 $ git checkout unstable-devel
-$ ./autogen.sh --prefix=/usr --disable-vivante --disable-etnaviv \
-  --with-etnaviv-source=$ETNA_SRC
+$ ./autogen.sh --prefix=/usr --libdir=/usr/lib64 --disable-vivante --disable-etnaviv  --with-etnaviv-source=$ETNA_SRC
 $ make
 $ make install
 $ cp conf/xorg-sample.conf /etc/X11/xorg.conf

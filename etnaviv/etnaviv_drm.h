@@ -1,6 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
- * Copyright (C) 2013 Red Hat
- * Author: Rob Clark <robdclark@gmail.com>
+ * Copyright (C) 2015 Etnaviv Project
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published by
@@ -28,9 +28,13 @@
 #include <stddef.h>
 #include "drm.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /* Please note that modifications to all structs defined here are
  * subject to backwards-compatibility constraints:
- *  1) Do not use pointers, use uint64_t instead for 32 bit / 64 bit
+ *  1) Do not use pointers, use __u64 instead for 32 bit / 64 bit
  *     user/kernel compatibility
  *  2) Keep fields aligned to their size
  *  3) Because of how drm_ioctl() works, we can add new fields at
@@ -41,19 +45,13 @@
  *     fields.. so that has to be somehow ok.
  */
 
-#define ETNADRM_PIPE_3D      0x00
-#define ETNADRM_PIPE_2D      0x01
-#define ETNADRM_PIPE_VG      0x02
-
-
-
 /* timeouts are specified in clock-monotonic absolute times (to simplify
  * restarting interrupted ioctls).  The following struct is logically the
  * same as 'struct timespec' but 32/64b ABI safe.
  */
 struct drm_etnaviv_timespec {
-	int64_t tv_sec;          /* seconds */
-	int64_t tv_nsec;         /* nanoseconds */
+	__s64 tv_sec;          /* seconds */
+	__s64 tv_nsec;         /* nanoseconds */
 };
 
 #define ETNAVIV_PARAM_GPU_MODEL                     0x01
@@ -86,12 +84,10 @@ struct drm_etnaviv_timespec {
 
 #define ETNA_MAX_PIPES 4
 
-//#define MSM_PARAM_GMEM_SIZE  0x02
-
 struct drm_etnaviv_param {
-	uint32_t pipe;           /* in, ETNA_PIPE_x */
-	uint32_t param;          /* in, ETNAVIV_PARAM_x */
-	uint64_t value;          /* out (get_param) or in (set_param) */
+	__u32 pipe;           /* in */
+	__u32 param;          /* in, ETNAVIV_PARAM_x */
+	__u64 value;          /* out (get_param) or in (set_param) */
 };
 
 /*
@@ -107,17 +103,16 @@ struct drm_etnaviv_param {
 /* map flags */
 #define ETNA_BO_FORCE_MMU    0x00100000
 
-
 struct drm_etnaviv_gem_new {
-	uint64_t size;           /* in */
-	uint32_t flags;          /* in, mask of ETNA_BO_x */
-	uint32_t handle;         /* out */
+	__u64 size;           /* in */
+	__u32 flags;          /* in, mask of ETNA_BO_x */
+	__u32 handle;         /* out */
 };
 
 struct drm_etnaviv_gem_info {
-	uint32_t handle;         /* in */
-	uint32_t pad;
-	uint64_t offset;         /* out, offset to pass to mmap() */
+	__u32 handle;         /* in */
+	__u32 pad;
+	__u64 offset;         /* out, offset to pass to mmap() */
 };
 
 #define ETNA_PREP_READ        0x01
@@ -125,13 +120,14 @@ struct drm_etnaviv_gem_info {
 #define ETNA_PREP_NOSYNC      0x04
 
 struct drm_etnaviv_gem_cpu_prep {
-	uint32_t handle;         /* in */
-	uint32_t op;             /* in, mask of ETNA_PREP_x */
+	__u32 handle;         /* in */
+	__u32 op;             /* in, mask of ETNA_PREP_x */
 	struct drm_etnaviv_timespec timeout;   /* in */
 };
 
 struct drm_etnaviv_gem_cpu_fini {
-	uint32_t handle;         /* in */
+	__u32 handle;         /* in */
+	__u32 flags;          /* in, placeholder for now, no defined values */
 };
 
 /*
@@ -149,27 +145,49 @@ struct drm_etnaviv_gem_cpu_fini {
  * NOTE that reloc's must be sorted by order of increasing submit_offset,
  * otherwise EINVAL.
  */
-struct drm_etnaviv_gem_submit_reloc_r20151214 {
-	uint32_t submit_offset;  /* in, offset from submit_bo */
-	uint32_t reloc_idx;      /* in, index of reloc_bo buffer */
-	uint64_t reloc_offset;   /* in, offset from start of reloc_bo */
-	uint32_t flags;          /* in, placeholder for now */
+struct drm_etnaviv_gem_submit_reloc {
+	__u32 submit_offset;  /* in, offset from submit_bo */
+	__u32 reloc_idx;      /* in, index of reloc_bo buffer */
+	__u64 reloc_offset;   /* in, offset from start of reloc_bo */
+	__u32 flags;          /* in, placeholder for now, no defined values */
 };
 
-struct drm_etnaviv_gem_submit_reloc_r20150302 {
-	uint32_t submit_offset;  /* in, offset from submit_bo */
-	uint32_t reloc_idx;      /* in, index of reloc_bo buffer */
-	uint64_t reloc_offset;   /* in, offset from start of reloc_bo */
+/* Each buffer referenced elsewhere in the cmdstream submit (ie. the
+ * cmdstream buffer(s) themselves or reloc entries) has one (and only
+ * one) entry in the submit->bos[] table.
+ *
+ * As a optimization, the current buffer (gpu virtual address) can be
+ * passed back through the 'presumed' field.  If on a subsequent reloc,
+ * userspace passes back a 'presumed' address that is still valid,
+ * then patching the cmdstream for this entry is skipped.  This can
+ * avoid kernel needing to map/access the cmdstream bo in the common
+ * case.
+ */
+#define ETNA_SUBMIT_BO_READ             0x0001
+#define ETNA_SUBMIT_BO_WRITE            0x0002
+struct drm_etnaviv_gem_submit_bo {
+	__u32 flags;          /* in, mask of ETNA_SUBMIT_BO_x */
+	__u32 handle;         /* in, GEM handle */
+	__u64 presumed;       /* in/out, presumed buffer address */
 };
 
-/* Original API */
-struct drm_etnaviv_gem_submit_reloc_r20130625 {
-	uint32_t submit_offset;  /* in, offset from submit_bo */
-	uint32_t or;             /* in, value OR'd with result */
-	int32_t  shift;          /* in, amount of left shift (can be negative) */
-	uint32_t reloc_idx;      /* in, index of reloc_bo buffer */
-	uint64_t reloc_offset;   /* in, offset from start of reloc_bo */
+/* performance monitor request (pmr) */
+#define ETNA_PM_PROCESS_PRE             0x0001
+#define ETNA_PM_PROCESS_POST            0x0002
+struct drm_etnaviv_gem_submit_pmr {
+	__u32 flags;          /* in, when to process request (ETNA_PM_PROCESS_x) */
+	__u8  domain;         /* in, pm domain */
+	__u8  pad;
+	__u16 signal;         /* in, pm signal */
+	__u32 sequence;       /* in, sequence number */
+	__u32 read_offset;    /* in, offset from read_bo */
+	__u32 read_idx;       /* in, index of read_bo buffer */
 };
+
+/* Each cmdstream submit consists of a table of buffers involved, and
+ * one or more cmdstream buffers.  This allows for conditional execution
+ * (context-restore), and IB buffers needed for per tile/bin draw cmds.
+ */
 
 /* submit-types:
  *   BUF - this cmd buffer is executed normally.
@@ -180,12 +198,11 @@ struct drm_etnaviv_gem_submit_reloc_r20130625 {
  *      switch since the last SUBMIT ioctl
  */
 #define ETNA_SUBMIT_CMD_BUF             0x0001
-#if ETNAVIV_DATE == ETNAVIV_DATE_PENGUTRONIX
-#define ETNA_SUBMIT_CMD_CTX_RESTORE_BUF 0x0002
-#else
-#define ETNA_SUBMIT_CMD_IB_TARGET_BUF   0x0002
-#define ETNA_SUBMIT_CMD_CTX_RESTORE_BUF 0x0003
-#endif
+//#define ETNA_PIPE_3D      0x00
+//#define ETNA_PIPE_2D      0x01
+//#define ETNA_PIPE_VG      0x02
+
+
 struct drm_etnaviv_gem_submit_cmd_r20150302 {
 	uint32_t type;           /* in, one of ETNA_SUBMIT_CMD_x */
 	uint32_t submit_idx;     /* in, index of submit_bo cmdstream buffer */
@@ -206,40 +223,6 @@ struct drm_etnaviv_gem_submit_cmd_r20130625 {
 	uint64_t relocs;         /* in, ptr to array of submit_reloc's */
 };
 
-/* Each buffer referenced elsewhere in the cmdstream submit (ie. the
- * cmdstream buffer(s) themselves or reloc entries) has one (and only
- * one) entry in the submit->bos[] table.
- *
- * As a optimization, the current buffer (gpu virtual address) can be
- * passed back through the 'presumed' field.  If on a subsequent reloc,
- * userspace passes back a 'presumed' address that is still valid,
- * then patching the cmdstream for this entry is skipped.  This can
- * avoid kernel needing to map/access the cmdstream bo in the common
- * case.
- */
-#define ETNA_SUBMIT_BO_READ             0x0001
-#define ETNA_SUBMIT_BO_WRITE            0x0002
-struct drm_etnaviv_gem_submit_bo {
-	uint32_t flags;          /* in, mask of ETNA_SUBMIT_BO_x */
-	uint32_t handle;         /* in, GEM handle */
-	uint64_t presumed;       /* in/out, presumed buffer address */
-};
-
-/* Each cmdstream submit consists of a table of buffers involved, and
- * one or more cmdstream buffers.  This allows for conditional execution
- * (context-restore), and IB buffers needed for per tile/bin draw cmds.
- */
-struct drm_etnaviv_gem_submit_r20150910 {
-	uint32_t fence;          /* out */
-	uint32_t pipe;           /* in, ETNA_PIPE_x */
-	uint32_t exec_state;     /* in, initial execution state (ETNA_PIPE_x) */
-	uint32_t nr_bos;         /* in, number of submit_bo's */
-	uint32_t nr_relocs;      /* in, number of submit_reloc's */
-	uint32_t stream_size;    /* in, cmdstream size */
-	uint64_t bos;            /* in, ptr to array of submit_bo's */
-	uint64_t relocs;         /* in, ptr to array of submit_reloc's */
-	uint64_t stream;         /* in, ptr to cmdstream */
-};
 
 struct drm_etnaviv_gem_submit_r20150302 {
 	uint32_t pipe;           /* in, ETNA_PIPE_x */
@@ -260,6 +243,24 @@ struct drm_etnaviv_gem_submit_r20130625 {
 	uint32_t nr_cmds;        /* in, number of submit_cmd's */
 	uint64_t bos;            /* in, ptr to array of submit_bo's */
 	uint64_t cmds;           /* in, ptr to array of submit_cmd's */
+};
+
+
+struct drm_etnaviv_gem_submit_r20150910 {
+	uint32_t fence;          /* out */
+	uint32_t pipe;           /* in, ETNA_PIPE_x */
+	uint32_t exec_state;     /* in, initial execution state (ETNA_PIPE_x) */
+	uint32_t nr_bos;         /* in, number of submit_bo's */
+	uint32_t nr_relocs;      /* in, number of submit_reloc's */
+	uint32_t stream_size;    /* in, cmdstream size */
+	uint64_t bos;            /* in, ptr to array of submit_bo's */
+	uint64_t relocs;         /* in, ptr to array of submit_reloc's */
+	uint64_t stream;         /* in, ptr to cmdstream */
+	__u32 flags;          /* in, mask of ETNA_SUBMIT_x */
+	__s32 fence_fd;       /* in/out, fence fd (see ETNA_SUBMIT_FENCE_FD_x) */
+	__u64 pmrs;           /* in, ptr to array of submit_pmr's */
+	__u32 nr_pmrs;        /* in, number of submit_pmr's */
+	__u32 pad;
 };
 
 /* The normal way to synchronize with the GPU is just to CPU_PREP on
@@ -295,8 +296,31 @@ struct drm_etnaviv_gem_wait {
 	struct drm_etnaviv_timespec timeout;	/* in */
 };
 
+/*
+ * Performance Monitor (PM):
+ */
+
+struct drm_etnaviv_pm_domain {
+	__u32 pipe;       /* in */
+	__u8  iter;       /* in/out, select pm domain at index iter */
+	__u8  id;         /* out, id of domain */
+	__u16 nr_signals; /* out, how many signals does this domain provide */
+	char  name[64];   /* out, name of domain */
+};
+
+struct drm_etnaviv_pm_signal {
+	__u32 pipe;       /* in */
+	__u8  domain;     /* in, pm domain index */
+	__u8  pad;
+	__u16 iter;       /* in/out, select pm source at index iter */
+	__u16 id;         /* out, id of signal */
+	char  name[64];   /* out, name of domain */
+};
+
 #define DRM_ETNAVIV_GET_PARAM          0x00
+/* placeholder:
 #define DRM_ETNAVIV_SET_PARAM          0x01
+ */
 #define DRM_ETNAVIV_GEM_NEW            0x02
 #define DRM_ETNAVIV_GEM_INFO           0x03
 #define DRM_ETNAVIV_GEM_CPU_PREP       0x04
@@ -312,14 +336,17 @@ struct drm_etnaviv_gem_wait {
 #define DRM_IOCTL_ETNAVIV_GET_PARAM    DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GET_PARAM, struct drm_etnaviv_param)
 #define DRM_IOCTL_ETNAVIV_GEM_NEW      DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_NEW, struct drm_etnaviv_gem_new)
 #define DRM_IOCTL_ETNAVIV_GEM_INFO     DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_INFO, struct drm_etnaviv_gem_info)
-#define DRM_IOCTL_ETNAVIV_GEM_CPU_PREP DRM_IOW (DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_CPU_PREP, struct drm_etnaviv_gem_cpu_prep)
-#define DRM_IOCTL_ETNAVIV_GEM_CPU_FINI DRM_IOW (DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_CPU_FINI, struct drm_etnaviv_gem_cpu_fini)
+#define DRM_IOCTL_ETNAVIV_GEM_CPU_PREP DRM_IOW(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_CPU_PREP, struct drm_etnaviv_gem_cpu_prep)
+#define DRM_IOCTL_ETNAVIV_GEM_CPU_FINI DRM_IOW(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_CPU_FINI, struct drm_etnaviv_gem_cpu_fini)
 #define DRM_IOCTL_ETNAVIV_GEM_SUBMIT   DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_SUBMIT, struct drm_etnaviv_gem_submit)
-#define DRM_IOCTL_ETNAVIV_WAIT_FENCE   DRM_IOW (DRM_COMMAND_BASE + DRM_ETNAVIV_WAIT_FENCE, struct drm_etnaviv_wait_fence)
-#define DRM_IOCTL_ETNAVIV_GEM_WAIT     DRM_IOW (DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_WAIT, struct drm_etnaviv_gem_wait)
+#define DRM_IOCTL_ETNAVIV_WAIT_FENCE   DRM_IOW(DRM_COMMAND_BASE + DRM_ETNAVIV_WAIT_FENCE, struct drm_etnaviv_wait_fence)
+#define DRM_IOCTL_ETNAVIV_GEM_USERPTR  DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_USERPTR, struct drm_etnaviv_gem_userptr)
+#define DRM_IOCTL_ETNAVIV_GEM_WAIT     DRM_IOW(DRM_COMMAND_BASE + DRM_ETNAVIV_GEM_WAIT, struct drm_etnaviv_gem_wait)
+#define DRM_IOCTL_ETNAVIV_PM_QUERY_DOM DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_PM_QUERY_DOM, struct drm_etnaviv_pm_domain)
+#define DRM_IOCTL_ETNAVIV_PM_QUERY_SIG DRM_IOWR(DRM_COMMAND_BASE + DRM_ETNAVIV_PM_QUERY_SIG, struct drm_etnaviv_pm_signal)
 
-#define __STR(x)			#x
-#define _STR(x)				__STR(x)
-#define ETNAVIV_DATE_STR		_STR(ETNAVIV_DATE)
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* __ETNAVIV_DRM_H__ */

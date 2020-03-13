@@ -79,11 +79,14 @@ Bool armada_load_accelerator(ScrnInfoPtr pScrn, const char *module)
 {
 	unsigned int i;
 
-	if (!module) {
-		for (i = 0; armada_drm_accelerators[i]; i++)
+	if (NULL == module)
+	{
+		for (i = 0; armada_drm_accelerators[i]; ++i)
 			if (xf86LoadSubModule(pScrn, armada_drm_accelerators[i]))
 				break;
-	} else {
+	}
+	else
+	{
 		if (!xf86LoadSubModule(pScrn, module))
 			return FALSE;
 
@@ -334,13 +337,30 @@ static Bool armada_platform_probe(DriverPtr drv, int entity_num, int flags,
 }
 #endif
 
+
+#ifdef XSERVER_LIBPCIACCESS
+static const struct pci_id_match armada_device_match[] = {
+    {
+     PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY,
+     0x00030000, 0x00ff0000, 0},
+
+    {0, 0, 0},
+};
+#endif
+
+
 _X_EXPORT DriverRec armada_driver = {
 	.driverVersion = ARMADA_VERSION,
 	.driverName = ARMADA_DRIVER_NAME,
 	.Identify = armada_identify,
 	.Probe = armada_probe,
 	.AvailableOptions = armada_available_options,
+	.module = NULL,
+	.refCount = 0,
 	.driverFunc = armada_driver_func,
+#ifdef XSERVER_LIBPCIACCESS
+	.supported_devices = armada_device_match,
+#endif
 #ifdef XSERVER_PLATFORM_BUS
 	.platformProbe = armada_platform_probe,
 #endif

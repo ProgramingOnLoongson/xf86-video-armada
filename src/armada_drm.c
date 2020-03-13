@@ -105,13 +105,12 @@ static Bool armada_drm_ModifyScanoutPixmap(PixmapPtr pixmap,
 static struct drm_armada_bo *armada_bo_alloc_framebuffer(ScrnInfoPtr pScrn,
 	int width, int height, int bpp)
 {
-	struct armada_drm_info *arm = GET_ARMADA_DRM_INFO(pScrn);
+	struct armada_drm_info *arm = (struct armada_drm_info *)GET_DRM_INFO(pScrn)->private;
 	struct drm_armada_bo *bo;
 	int ret;
 
 	if (arm->accel_ops && arm->accel_ops->align_bo_size)
-		arm->accel_ops->align_bo_size(pScrn->pScreen, &width,
-					      &height, bpp);
+		arm->accel_ops->align_bo_size(pScrn->pScreen, &width, &height, bpp);
 
 	bo = drm_armada_bo_dumb_create(arm->bufmgr, width, height, bpp);
 	if (!bo) {
@@ -434,7 +433,7 @@ static Bool armada_drm_ScreenInit(SCREEN_INIT_ARGS_DECL)
 {
 	ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 	struct common_drm_info *drm = GET_DRM_INFO(pScrn);
-	struct armada_drm_info *arm = GET_ARMADA_DRM_INFO(pScrn);
+	struct armada_drm_info *arm = (struct armada_drm_info *)drm->private;
 	struct drm_armada_bo *bo;
 	Bool use_kms_bo;
 	Bool ret;
@@ -528,21 +527,26 @@ static Bool armada_drm_pre_init(ScrnInfoPtr pScrn)
 	arm->accel = xf86ReturnOptValBool(arm->Options, OPTION_USE_GPU, TRUE);
 	s = xf86GetOptValString(arm->Options, OPTION_ACCEL_MODULE);
 
-	if (arm->accel) {
+	if (arm->accel)
+	{
 		struct common_drm_info *drm = GET_DRM_INFO(pScrn);
 
 		if (!armada_load_accelerator(pScrn, s))
 			return FALSE;
 
 		arm->accel_ops = armada_get_accelerator();
-		if (arm->accel_ops) {
+		if (arm->accel_ops)
+		{
 			if (arm->accel_ops->pre_init &&
-			    !arm->accel_ops->pre_init(pScrn, drm->fd)) {
+			    !arm->accel_ops->pre_init(pScrn, drm->fd))
+			{
 				xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 					   "[drm] accel module failed to initialise\n");
 				return FALSE;
 			}
-		} else {
+		}
+		else
+		{
 			arm->accel = FALSE;
 		}
 	}

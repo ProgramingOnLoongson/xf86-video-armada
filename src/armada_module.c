@@ -153,12 +153,14 @@ static Bool armada_probe(DriverPtr drv, int flags)
 	for (i = 0; i < numDevSections; i++) {
 		ScrnInfoPtr pScrn;
 		const char *busid = DRM_DEFAULT_BUS_ID;
-		int entity, fd, j;
+		int entity, fd;
+		unsigned int j;
 
 		if (devSections[i]->busID)
 			busid = devSections[i]->busID;
 
-		for (j = 0; j < ARRAY_SIZE(drm_module_names); j++) {
+		for (j = 0; j < ARRAY_SIZE(drm_module_names); ++j)
+		{
 			fd = drmOpen(drm_module_names[j], busid);
 			if (fd >= 0)
 				break;
@@ -173,14 +175,12 @@ static Bool armada_probe(DriverPtr drv, int flags)
 		entity = xf86ClaimNoSlot(drv, 0, devSections[i], TRUE);
 		common_alloc_dev(entity, fd, NULL, TRUE);
 
-		pScrn = xf86ConfigFbEntity(NULL, 0, entity,
-					   NULL, NULL, NULL, NULL);
+		pScrn = xf86ConfigFbEntity(NULL, 0, entity, NULL, NULL, NULL, NULL);
 		if (!pScrn)
 			continue;
 
 		if (busid)
-			xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-				   "Using BusID \"%s\"\n", busid);
+			xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using BusID \"%s\"\n", busid);
 
 		foundScreen = TRUE;
 		armada_init_screen(pScrn);

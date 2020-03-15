@@ -1440,12 +1440,14 @@ static Bool etnaviv_CreateScreenResources(ScreenPtr pScreen)
 		 * If the 2D engine can do A8 targets, then enable
 		 * PICT_a8 for glyph cache acceleration.
 		 */
-		if (VIV_FEATURE(etnaviv->conn, chipMinorFeatures0,
-				2D_A8_TARGET)) {
+		if (VIV_FEATURE(etnaviv->conn, chipMinorFeatures0, 2D_A8_TARGET))
+		{
 			xf86DrvMsg(etnaviv->scrnIndex, X_INFO,
-				   "etnaviv: A8 target supported\n");
+					"etnaviv: A8 target supported\n");
 			num = 2;
-		} else {
+		}
+		else
+		{
 			xf86DrvMsg(etnaviv->scrnIndex, X_INFO,
 				   "etnaviv: A8 target not supported\n");
 		}

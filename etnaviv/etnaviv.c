@@ -845,8 +845,7 @@ static Bool etnaviv_pre_init(ScrnInfoPtr pScrn, int drm_fd)
 	 * flips with etnaviv-allocated buffer objects, whereas DRI2
 	 * can (and does) provide support for this.
 	 */
-	etnaviv->dri3_enabled = xf86ReturnOptValBool(options, OPTION_DRI3,
-						     FALSE);
+	etnaviv->dri3_enabled = xf86ReturnOptValBool(options, OPTION_DRI3, FALSE);
 #endif
 
 	etnaviv->scrnIndex = pScrn->scrnIndex;

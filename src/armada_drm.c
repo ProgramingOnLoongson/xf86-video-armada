@@ -128,9 +128,9 @@ static struct drm_armada_bo *armada_bo_alloc_framebuffer(ScrnInfoPtr pScrn,
 		return NULL;
 	}
 
-//	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-//		   "Allocated new frame buffer %dx%d stride %d\n",
-//		   width, height, bo->pitch);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "Allocated new frame buffer %dx%d stride %d\n",
+		   width, height, bo->pitch);
 
 	return bo;
 }
@@ -477,8 +477,11 @@ static Bool armada_drm_ScreenInit(SCREEN_INIT_ARGS_DECL)
 	 */
 	use_kms_bo = arm->version && strstr(arm->version->name, "armada");
 	if (use_kms_bo)
-		use_kms_bo = xf86ReturnOptValBool(arm->Options,
-						  OPTION_USE_KMS_BO, TRUE);
+       	{
+		use_kms_bo = xf86ReturnOptValBool(arm->Options,  OPTION_USE_KMS_BO, TRUE);
+		
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " Using KMS BO. \n");	
+	}
 
 	if (arm->accel) {
 		struct drm_armada_bufmgr *mgr = arm->bufmgr;

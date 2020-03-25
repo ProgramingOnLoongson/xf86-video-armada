@@ -723,7 +723,11 @@ Bool common_drm_PreInit(ScrnInfoPtr pScrn, int flags24)
 	pScrn->displayWidth = 640;
 
 	depth = bpp = 0;
-	if (drmGetCap(drm->fd, DRM_CAP_DUMB_PREFERRED_DEPTH, &val) == 0) {
+	if (drmGetCap(drm->fd, DRM_CAP_DUMB_PREFERRED_DEPTH, &val) == 0)
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+			   "[drm] dumb prefered depth : %lu\n", val);
+
 		switch (val) {
 		case 8:
 		case 15:

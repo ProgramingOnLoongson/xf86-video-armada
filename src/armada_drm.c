@@ -553,6 +553,11 @@ static Bool armada_drm_pre_init(ScrnInfoPtr pScrn)
 			arm->accel = FALSE;
 		}
 	}
+	else
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " GPU Acceleration is not enabled"
+			" standalone KMS driver only! \n");
+	}
 
 	xf86CrtcConfigInit(pScrn, &armada_drm_config_funcs);
 

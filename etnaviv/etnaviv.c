@@ -25,7 +25,7 @@
 
 #include "fb.h"
 #include "gcstruct.h"
-#include "xf86.h"
+#include <xf86.h>
 #include "compat-api.h"
 
 #include "cpu_access.h"
@@ -963,8 +963,7 @@ fail_accel:
 	return FALSE;
 }
 
-static void etnaviv_align_bo_size(ScreenPtr pScreen, int *width, int *height,
-	int bpp)
+static void etnaviv_align_bo_size(ScreenPtr pScreen, int *width, int *height, int bpp)
 {
 	*width = etnaviv_pitch(*width, bpp) * 8 / bpp;
 }

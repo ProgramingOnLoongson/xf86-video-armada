@@ -119,10 +119,10 @@ void armada_register_accel(const struct armada_accel_ops *ops, pointer module,
 
 static void armada_identify(int flags)
 {
-//	xf86PrintChipsets(ARMADA_NAME, "Support for Marvell LCD Controller",
-//			  armada_chipsets);
-//	xf86PrintChipsets(ARMADA_NAME, "Support for Freescale IPU",
-//			  ipu_chipsets);
+	xf86PrintChipsets(ARMADA_NAME, "Support for Marvell LCD Controller",
+			  armada_chipsets);
+	xf86PrintChipsets(ARMADA_NAME, "Support for Freescale IPU",
+			  ipu_chipsets);
         xf86PrintChipsets(ARMADA_NAME, "Support for Loongson 7a1000 display controller",
 			  loongson7a_chipsets);
 }
@@ -195,7 +195,7 @@ static Bool armada_probe(DriverPtr drv, int flags)
 static const OptionInfoRec *armada_available_options(int chipid, int busid)
 {
 	static OptionInfoRec opts[32];
-	int i, j, k;
+	unsigned int i, j, k;
 
 	for (i = k = 0; i < ARRAY_SIZE(options); i++) {
 		for (j = 0; options[i][j].token != -1; j++) {

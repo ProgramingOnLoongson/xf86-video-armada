@@ -117,19 +117,29 @@ int etnadrm_open_render(const char *name)
 {
 	drmVersionPtr version;
 	char buf[64];
-	int minor, fd, rc;
-
-	for (minor = 0; minor < 64; minor++) {
-		snprintf(buf, sizeof(buf), "%s/card%d", DRM_DIR_NAME,
-			 minor);
+	int  fd, rc;
+	unsigned int minor;
+	for (minor = 0; minor < 64; ++minor)
+	{
+		snprintf(buf, sizeof(buf), "%s/card%d", DRM_DIR_NAME, minor);
+		
+		xf86Msg(X_INFO, "Opening: %s\n", buf);
 
 		fd = open(buf, O_RDWR);
 		if (fd == -1)
 			continue;
 
 		version = drmGetVersion(fd);
-		if (version) {
+		if (version)
+		{
+			xf86Msg(X_INFO, "Version: %d.%d.%d\n", version->version_major,
+				version->version_minor, version->version_patchlevel);
+			xf86Msg(X_INFO, "Name: %s\n", version->name);
+			xf86Msg(X_INFO, "Date: %s\n", version->date);
+			xf86Msg(X_INFO, "Description: %s\n", version->desc);
+			
 			rc = strcmp(version->name, name);
+			
 			drmFreeVersion(version);
 
 			if (rc == 0)

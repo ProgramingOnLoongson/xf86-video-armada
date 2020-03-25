@@ -9,14 +9,13 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include <xf86drm.h>
-#include "xf86.h"
+#include <xf86.h>
 
 #include "armada_accel.h"
 #include "etnaviv_accel.h"
 #include "etnadrm.h"
 
-static pointer etnadrm_setup(pointer module, pointer opts, int *errmaj,
-	int *errmin)
+static pointer etnadrm_setup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
 	int fd;
 

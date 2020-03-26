@@ -125,7 +125,7 @@ int etnadrm_open_render(const char *name)
 		
 		xf86Msg(X_INFO, "Opening: %s\n", buf);
 
-		fd = open(buf, O_RDWR);
+		fd = open(buf, O_RDWR | O_CLOEXEC);
 		if (fd == -1)
 			continue;
 

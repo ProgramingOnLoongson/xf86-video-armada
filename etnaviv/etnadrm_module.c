@@ -34,7 +34,8 @@ static pointer etnadrm_setup(pointer module, pointer opts, int *errmaj, int *err
 	return NULL;
 }
 
-static XF86ModuleVersionInfo etnadrm_version = {
+static XF86ModuleVersionInfo etnadrm_version =
+{
 	.modname = "Etnaviv GPU driver (DRM)",
 	.vendor = MODULEVENDORSTRING,
 	._modinfo1_ = MODINFOSTRING1,
@@ -49,8 +50,9 @@ static XF86ModuleVersionInfo etnadrm_version = {
 	.checksum = { 0, 0, 0, 0 },
 };
 
-_X_EXPORT XF86ModuleData etnadrm_gpuModuleData = {
+_X_EXPORT XF86ModuleData etnadrm_gpuModuleData =
+{
 	.vers = &etnadrm_version,
 	.setup = etnadrm_setup,
-        .teardown = NULL,
+	.teardown = NULL,
 };

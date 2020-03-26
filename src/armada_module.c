@@ -109,8 +109,7 @@ void armada_register_accel(const struct armada_accel_ops *ops, pointer module,
 	unsigned int n = armada_num_accel_modules++;
 
 	armada_accel_modules = xnfrealloc(armada_accel_modules,
-					  armada_num_accel_modules *
-					  sizeof(*armada_accel_modules));
+			armada_num_accel_modules * sizeof(*armada_accel_modules));
 
 	armada_accel_modules[n].name = name;
 	armada_accel_modules[n].ops = ops;
@@ -274,6 +273,7 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 	} else {
 		ddx_managed_master = TRUE;
 		our_fd = open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+		xf86Msg( X_INFO, " Opening %s\n", path);
 		if (our_fd == -1)
 			goto err_free;
 

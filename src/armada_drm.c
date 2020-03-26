@@ -34,13 +34,13 @@
 #define CURSOR_MAX_HEIGHT	32
 
 const OptionInfoRec armada_drm_options[] = {
-	{ OPTION_XV_ACCEL,	"XvAccel",	   OPTV_BOOLEAN, {0}, FALSE },
-	{ OPTION_XV_PREFEROVL,	"XvPreferOverlay", OPTV_BOOLEAN, {0}, TRUE  },
+	{ OPTION_XV_ACCEL, "XvAccel", OPTV_BOOLEAN, {0}, FALSE },
+	{ OPTION_XV_PREFEROVL, "XvPreferOverlay", OPTV_BOOLEAN, {0}, TRUE },
 	{ OPTION_XV_DISPRIMARY, "XvDisablePrimary",OPTV_BOOLEAN, {0}, FALSE },
-	{ OPTION_USE_GPU,	"UseGPU",	   OPTV_BOOLEAN, {0}, FALSE },
-	{ OPTION_USE_KMS_BO,	"UseKMSBo",	   OPTV_BOOLEAN, {0}, FALSE },
-	{ OPTION_ACCEL_MODULE,	"AccelModule",	   OPTV_STRING,  {0}, FALSE },
-	{ -1,			NULL,		   OPTV_NONE,    {0}, FALSE }
+	{ OPTION_USE_GPU, "UseGPU", OPTV_BOOLEAN, {0}, FALSE },
+	{ OPTION_USE_KMS_BO, "UseKMSBo", OPTV_BOOLEAN, {0}, FALSE },
+	{ OPTION_ACCEL_MODULE, "AccelModule", OPTV_STRING,  {0}, FALSE },
+	{ -1, NULL, OPTV_NONE, {0}, FALSE }
 };
 
 static Bool armada_drm_accel_import(ScreenPtr pScreen, PixmapPtr pixmap,
@@ -477,13 +477,13 @@ static Bool armada_drm_ScreenInit(SCREEN_INIT_ARGS_DECL)
 	 */
 	use_kms_bo = arm->version && strstr(arm->version->name, "armada");
 	if (use_kms_bo)
-       	{
-		use_kms_bo = xf86ReturnOptValBool(arm->Options,  OPTION_USE_KMS_BO, TRUE);
-		
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " Using KMS BO. \n");	
+	{
+		use_kms_bo = xf86ReturnOptValBool(arm->Options, OPTION_USE_KMS_BO, TRUE);
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " Using KMS BO. \n");
 	}
 
-	if (arm->accel) {
+	if (arm->accel)
+	{
 		struct drm_armada_bufmgr *mgr = arm->bufmgr;
 
 		if (!use_kms_bo)

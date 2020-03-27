@@ -111,17 +111,6 @@ static uint32_t common_drm_msc_to_frame(xf86CrtcPtr crtc, uint64_t msc)
 	return msc - drmc->last_msc;
 }
 
-/*
- * CRTC support
- */
-static void common_drm_reload_hw_cursors(ScrnInfoPtr pScrn)
-{
-	struct common_drm_info *drm = GET_DRM_INFO(pScrn);
-
-	/* Work around stricter checks in X */
-	if (pScrn->pScreen && drm->hw_cursor)
-		xf86_reload_cursors(pScrn->pScreen);
-}
 
 static void drmmode_ConvertToKMode(drmModeModeInfoPtr kmode,
 	DisplayModePtr mode)
@@ -233,8 +222,6 @@ Bool common_drm_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
 		crtc->rotation = saved_rotation;
 	}
 
-	common_drm_reload_hw_cursors(crtc->scrn);
-
 	return ret;
 }
 
@@ -261,8 +248,6 @@ void common_drm_crtc_resize(ScrnInfoPtr pScrn, int width, int height,
 
 		common_drm_crtc_apply(crtc, fb_id);
 	}
-
-	common_drm_reload_hw_cursors(pScrn);
 
 	drmModeRmFB(drm->fd, old_fb_id);
 }
@@ -974,9 +959,10 @@ Bool common_drm_EnterVT(VT_FUNC_ARGS_DECL)
 	xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
 	int i;
 
-	if (!common_drm_get_master(drm->dev)) {
+	if (!common_drm_get_master(drm->dev))
+	{
 		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			   "[drm] set master failed: %s\n", strerror(errno));
+			"[drm] set master failed: %s\n", strerror(errno));
 		return FALSE;
 	}
 
@@ -986,7 +972,8 @@ Bool common_drm_EnterVT(VT_FUNC_ARGS_DECL)
 	}
 
 	/* Disable unused CRTCs */
-	for (i = 0; i < xf86_config->num_crtc; i++) {
+	for (i = 0; i < xf86_config->num_crtc; i++)
+	{
 		xf86CrtcPtr crtc = xf86_config->crtc[i];
 		struct common_crtc_info *drmc = common_crtc(crtc);
 
@@ -1279,13 +1266,17 @@ struct common_drm_device *common_alloc_dev(int entity_num, int fd,
 	drm_dev->fd = fd;
 	drm_dev->master_count = !ddx_managed_master;
 
-	if (path) {
+	if (path)
+	{
 		drm_dev->kms_path = strdup(path);
-		if (!drm_dev->kms_path) {
+		if (!drm_dev->kms_path)
+		{
 			free(drm_dev);
 			return NULL;
 		}
-	} else {
+	}
+	else
+	{
 		drm_dev->kms_path = NULL;
 	}
 

@@ -650,7 +650,6 @@ static Bool armada_drm_PreInit(ScrnInfoPtr pScrn, int flags)
 	/* Get the device we detected at probe time */
 	drm_dev = common_entity_get_dev(pScrn->entityList[0]);
 
-
 	if (NULL == drm_dev)
 	{
 		return FALSE;
@@ -662,7 +661,7 @@ static Bool armada_drm_PreInit(ScrnInfoPtr pScrn, int flags)
 
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
 				"fd: %d, master_count: %d, kms_path: %s.\n",
-				fd, master_count, kms_path);
+				drm_dev->fd, drm_dev->master_count, drm_dev->kms_path);
 	}
 
 	if (!armada_drm_alloc(pScrn, drm_dev))

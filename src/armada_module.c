@@ -127,7 +127,7 @@ static void armada_identify(int flags)
 			  loongson7a_chipsets);
 }
 
-static void armada_init_screen(ScrnInfoPtr pScrn)
+static void LS_SetupScrnHooks(ScrnInfoPtr pScrn)
 {
 	pScrn->driverVersion = ARMADA_VERSION;
 	pScrn->driverName    = ARMADA_DRIVER_NAME;
@@ -194,7 +194,7 @@ static Bool armada_probe(DriverPtr drv, int flags)
 			xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using BusID \"%s\"\n", busid);
 
 		foundScreen = TRUE;
-		armada_init_screen(pScrn);
+		LS_SetupScrnHooks(pScrn);
 	}
 
 	free(devSections);
@@ -260,16 +260,86 @@ static Bool armada_is_kms(int fd)
 	return has_connectors;
 }
 
+
+static int open_hw(const char *dev)
+{
+    int fd;
+
+    if (dev)
+        fd = open(dev, O_RDWR | O_CLOEXEC, 0);
+    else {
+        dev = getenv("KMSDEVICE");
+        if ((NULL == dev) || ((fd = open(dev, O_RDWR | O_CLOEXEC, 0)) == -1)) {
+            dev = "/dev/dri/card0";
+            fd = open(dev, O_RDWR | O_CLOEXEC, 0);
+        }
+    }
+    if (fd == -1)
+        xf86DrvMsg(-1, X_ERROR, "open %s: %s\n", dev, strerror(errno));
+
+    return fd;
+}
+
+
+static int check_outputs(int fd, int *count)
+{
+    drmModeResPtr res = drmModeGetResources(fd);
+    int ret;
+
+    if (!res)
+        return FALSE;
+
+    if (count)
+        *count = res->count_connectors;
+
+    ret = res->count_connectors > 0;
+
+    if (ret == FALSE) {
+        uint64_t value = 0;
+        if (drmGetCap(fd, DRM_CAP_PRIME, &value) == 0 &&
+                (value & DRM_PRIME_CAP_EXPORT))
+            ret = TRUE;
+    }
+    drmModeFreeResources(res);
+    return ret;
+}
+
+static Bool probe_hw(const char *dev, struct xf86_platform_device *platform_dev)
+{
+    int fd;
+
+#ifdef XF86_PDEV_SERVER_FD
+    if (platform_dev && (platform_dev->flags & XF86_PDEV_SERVER_FD))
+    {
+        fd = xf86_platform_device_odev_attributes(platform_dev)->fd;
+        if (fd == -1)
+            return FALSE;
+        return check_outputs(fd, NULL);
+    }
+#endif
+
+
+    fd = open_hw(dev);
+    if (fd != -1) {
+        int ret = check_outputs(fd, NULL);
+
+        close(fd);
+        return ret;
+    }
+    return FALSE;
+
+}
+
 static struct common_drm_device *armada_create_dev(int entity_num,
-	struct xf86_platform_device *dev)
+	struct xf86_platform_device *platform_dev)
 {
 	struct common_drm_device *drm_dev;
 	const char *path;
 	Bool ddx_managed_master;
 	int fd, our_fd = -1;
 
-	path = xf86_platform_device_odev_attributes(dev)->path;
-	if (!path)
+	path = xf86_platform_device_odev_attributes(platform_dev)->path;
+	if (NULL == path)
 		goto err_free;
 	else
 	{
@@ -277,11 +347,25 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 	}
 
 #ifdef ODEV_ATTRIB_FD
-	fd = xf86_get_platform_device_int_attrib(dev, ODEV_ATTRIB_FD, -1);
+	fd = xf86_get_platform_device_int_attrib(platform_dev, ODEV_ATTRIB_FD, -1);
 #else
 	fd = -1;
 #endif
-	if (fd != -1) {
+
+#ifdef XF86_PDEV_SERVER_FD
+	if (platform_dev && (platform_dev->flags & XF86_PDEV_SERVER_FD))
+	{
+		fd = xf86_platform_device_odev_attributes(platform_dev)->fd;
+		if (fd != -1)
+		{
+			check_outputs(fd, NULL);
+			xf86Msg( X_INFO, " SERVER MANAGED FD\n");
+		}
+	}
+#endif
+
+	if (fd != -1)
+	{
 		ddx_managed_master = FALSE;
 		if (!armada_is_kms(fd))
 			goto err_free;
@@ -312,8 +396,10 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 
 	/* If we're running unprivileged, don't drop master status */
 	if (geteuid())
+	{
 		ddx_managed_master = FALSE;
-
+		xf86Msg(X_INFO, "Running unprivileged, don't drop master status.\n");
+	}
 	drm_dev = common_alloc_dev(entity_num, fd, path, ddx_managed_master);
 	if (!drm_dev && our_fd != -1)
 		close(our_fd);
@@ -325,27 +411,38 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 }
 
 
-static Bool armada_platform_probe(DriverPtr drv, int entity_num, int flags,
-	struct xf86_platform_device *dev, intptr_t match_data)
+static Bool armada_platform_probe(DriverPtr driver, 
+		int entity_num, int flags,
+		struct xf86_platform_device *dev, 
+		intptr_t match_data)
 {
 	struct common_drm_device *drm_dev;
-	ScrnInfoPtr pScrn;
+	ScrnInfoPtr pScrn = NULL;
+	int scr_flags = 0;
 
+	if (flags & PLATFORM_PROBE_GPU_SCREEN)
+		scr_flags = XF86_ALLOCATE_GPU_SCREEN;
 	xf86Msg(X_INFO, "Try platform probe: entity_num=%d\n", entity_num);
 
 	drm_dev = common_entity_get_dev(entity_num);
-	if (!drm_dev)
+	if (NULL == drm_dev)
+	{
+		xf86Msg(X_INFO, "drm_dev = NULL, try create.\n");
 		drm_dev = armada_create_dev(entity_num, dev);
+	}
+
 	if (!drm_dev)
 		return FALSE;
 
-	pScrn = xf86AllocateScreen(drv, 0);
+	pScrn = xf86AllocateScreen(driver, scr_flags);
 	if (!pScrn)
 		return FALSE;
+	if (xf86IsEntitySharable(entity_num))
+		xf86SetEntityShared(entity_num);
 
 	xf86AddEntityToScreen(pScrn, entity_num);
 
-	armada_init_screen(pScrn);
+	LS_SetupScrnHooks(pScrn);
 
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		"Added screen for KMS device %s\n", drm_dev->kms_path);

@@ -1303,7 +1303,7 @@ Bool common_drm_fd_is_master(int fd)
 	drmSetVersion sv;
 
 	sv.drm_di_major = 1;
-	sv.drm_di_minor = 1;
+	sv.drm_di_minor = 4;
 	sv.drm_dd_major = -1;
 	sv.drm_dd_minor = -1;
 

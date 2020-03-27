@@ -116,13 +116,14 @@ void armada_register_accel(const struct armada_accel_ops *ops, pointer module,
 	armada_accel_modules[n].module = module;
 }
 
+
 static void armada_identify(int flags)
 {
 	xf86PrintChipsets(ARMADA_NAME, "Support for Marvell LCD Controller",
 			  armada_chipsets);
 	xf86PrintChipsets(ARMADA_NAME, "Support for Freescale IPU",
 			  ipu_chipsets);
-        xf86PrintChipsets(ARMADA_NAME, "Support for Loongson 7a1000 display controller",
+	xf86PrintChipsets(ARMADA_NAME, "Support for Loongson 7a1000 display controller",
 			  loongson7a_chipsets);
 }
 
@@ -142,12 +143,20 @@ static Bool armada_probe(DriverPtr drv, int flags)
 	int i, numDevSections;
 	Bool foundScreen = FALSE;
 
+	xf86Msg(X_INFO, "Try probe:\n");
+
 	if (flags & PROBE_DETECT)
 		return FALSE;
 
 	numDevSections = xf86MatchDevice(ARMADA_DRIVER_NAME, &devSections);
 	if (numDevSections <= 0)
+	{
 		return FALSE;
+	}
+	else
+	{
+		xf86Msg(X_INFO, "Number of DevSections: %d\n", numDevSections);
+	}
 
 	for (i = 0; i < numDevSections; ++i)
 	{
@@ -165,6 +174,8 @@ static Bool armada_probe(DriverPtr drv, int flags)
 			if (fd >= 0)
 				break;
 		}
+
+		xf86Msg(X_INFO, "(%s, %d) opened.\n", drm_module_names[j], fd);
 
 		if (fd < 0)
 			continue;
@@ -208,12 +219,12 @@ static const OptionInfoRec *armada_available_options(int chipid, int busid)
 	return opts;
 }
 
-static Bool
-armada_driver_func(ScrnInfoPtr pScrn, xorgDriverFuncOp op, pointer ptr)
+static Bool armada_driver_func(ScrnInfoPtr pScrn, xorgDriverFuncOp op, pointer ptr)
 {
 	xorgHWFlags *flag;
     
-	switch (op) {
+	switch (op)
+	{
 	case GET_REQUIRED_HW_INTERFACES:
 		flag = (CARD32*)ptr;
 		(*flag) = 0;
@@ -257,9 +268,13 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 	Bool ddx_managed_master;
 	int fd, our_fd = -1;
 
-	path = xf86_get_platform_device_attrib(dev, ODEV_ATTRIB_PATH);
+	path = xf86_platform_device_odev_attributes(dev)->path;
 	if (!path)
 		goto err_free;
+	else
+	{
+		xf86Msg( X_INFO, " path: %s\n", path);
+	}
 
 #ifdef ODEV_ATTRIB_FD
 	fd = xf86_get_platform_device_int_attrib(dev, ODEV_ATTRIB_FD, -1);
@@ -270,23 +285,28 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 		ddx_managed_master = FALSE;
 		if (!armada_is_kms(fd))
 			goto err_free;
-	} else {
+	}
+	else
+	{
 		ddx_managed_master = TRUE;
 		our_fd = open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
 		xf86Msg( X_INFO, " Opening %s\n", path);
 		if (our_fd == -1)
 			goto err_free;
 
-		if (!armada_is_kms(our_fd)) {
+		if (!armada_is_kms(our_fd))
+		{
+			xf86Msg( X_INFO, " %s is not a KMS device, closing.\n", path);
 			close(our_fd);
 			goto err_free;
 		}
 
-		if (!common_drm_fd_is_master(our_fd)) {
+		if (!common_drm_fd_is_master(our_fd))
+		{
+			xf86Msg( X_INFO, " %s is not a master, closing.\n", path);
 			close(our_fd);
 			goto err_free;
 		}
-
 		fd = our_fd;
 	}
 
@@ -304,10 +324,20 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 	return NULL;
 }
 
-static int armada_create_screen(DriverPtr drv, int entity_num,
-	struct common_drm_device *drm_dev)
+
+static Bool armada_platform_probe(DriverPtr drv, int entity_num, int flags,
+	struct xf86_platform_device *dev, intptr_t match_data)
 {
+	struct common_drm_device *drm_dev;
 	ScrnInfoPtr pScrn;
+
+	xf86Msg(X_INFO, "Try platform probe: entity_num=%d\n", entity_num);
+
+	drm_dev = common_entity_get_dev(entity_num);
+	if (!drm_dev)
+		drm_dev = armada_create_dev(entity_num, dev);
+	if (!drm_dev)
+		return FALSE;
 
 	pScrn = xf86AllocateScreen(drv, 0);
 	if (!pScrn)
@@ -318,23 +348,9 @@ static int armada_create_screen(DriverPtr drv, int entity_num,
 	armada_init_screen(pScrn);
 
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Added screen for KMS device %s\n", drm_dev->kms_path);
+		"Added screen for KMS device %s\n", drm_dev->kms_path);
 
 	return TRUE;
-}
-
-static Bool armada_platform_probe(DriverPtr drv, int entity_num, int flags,
-	struct xf86_platform_device *dev, intptr_t match_data)
-{
-	struct common_drm_device *drm_dev;
-
-	drm_dev = common_entity_get_dev(entity_num);
-	if (!drm_dev)
-		drm_dev = armada_create_dev(entity_num, dev);
-	if (!drm_dev)
-		return FALSE;
-
-	return armada_create_screen(drv, entity_num, drm_dev);
 }
 #endif
 

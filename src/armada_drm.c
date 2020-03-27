@@ -31,7 +31,7 @@
 #include "utils.h"
 
 #define CURSOR_MAX_WIDTH	64
-#define CURSOR_MAX_HEIGHT	32
+#define CURSOR_MAX_HEIGHT	64
 
 const OptionInfoRec armada_drm_options[] = {
 	{ OPTION_XV_ACCEL, "XvAccel", OPTV_BOOLEAN, {0}, FALSE },
@@ -58,8 +58,7 @@ static Bool armada_drm_accel_import(ScreenPtr pScreen, PixmapPtr pixmap,
 
 	if (drm_armada_bo_to_fd(bo, &fd)) {
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "etnaviv: unable to get prime fd for bo: %s\n",
-			   strerror(errno));
+			"etnaviv: unable to get prime fd for bo: %s\n", strerror(errno));
 		return FALSE;
 	}
 
@@ -85,15 +84,13 @@ static Bool armada_drm_ModifyScanoutPixmap(PixmapPtr pixmap,
 	old_devKind = pixmap->devKind;
 	old_ptr = pixmap->devPrivate.ptr;
 
-	if (!pScreen->ModifyPixmapHeader(pixmap, width, height, -1, -1,
-					 bo->pitch, bo->ptr))
+	if (!pScreen->ModifyPixmapHeader(pixmap, width, height, -1, -1, bo->pitch, bo->ptr))
 		return FALSE;
 
 	ret = armada_drm_accel_import(pScreen, pixmap, bo);
 	if (!ret) {
 		assert(pScreen->ModifyPixmapHeader(pixmap, old_width,
-						   old_height, -1, -1,
-						   old_devKind, old_ptr));
+						old_height, -1, -1, old_devKind, old_ptr));
 		return FALSE;
 	}
 
@@ -129,8 +126,7 @@ static struct drm_armada_bo *armada_bo_alloc_framebuffer(ScrnInfoPtr pScrn,
 	}
 
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Allocated new frame buffer %dx%d stride %d\n",
-		   width, height, bo->pitch);
+		"Allocated new frame buffer %dx%d stride %d\n", width, height, bo->pitch);
 
 	return bo;
 }
@@ -171,8 +167,7 @@ static void armada_drm_crtc_load_cursor_argb(xf86CrtcPtr crtc, CARD32 *image)
 	struct common_drm_info *drm = GET_DRM_INFO(crtc->scrn);
 
 	drm_armada_bo_subdata(drmc->cursor_data, 0,
-			      drm->cursor_max_width *
-			      drm->cursor_max_height * 4, image);
+			drm->cursor_max_width * drm->cursor_max_height * 4, image);
 }
 
 static void *
@@ -451,7 +446,8 @@ static Bool armada_drm_ScreenInit(SCREEN_INIT_ARGS_DECL)
 
 	if (drmModeAddFB(drm->fd, pScrn->virtualX, pScrn->virtualY,
 			 pScrn->depth, pScrn->bitsPerPixel, bo->pitch,
-			 bo->handle, &drm->fb_id) < 0) {
+			 bo->handle, &drm->fb_id) < 0)
+	{
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "[drm] failed to add fb: %s\n", strerror(errno));
 		drm_armada_bo_put(bo);
@@ -653,8 +649,21 @@ static Bool armada_drm_PreInit(ScrnInfoPtr pScrn, int flags)
 
 	/* Get the device we detected at probe time */
 	drm_dev = common_entity_get_dev(pScrn->entityList[0]);
-	if (!drm_dev)
+
+
+	if (NULL == drm_dev)
+	{
 		return FALSE;
+	}
+	else
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+			"Get the device detected at probe time.\n");
+
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+				"fd: %d, master_count: %d, kms_path: %s.\n",
+				fd, master_count, kms_path);
+	}
 
 	if (!armada_drm_alloc(pScrn, drm_dev))
 		return FALSE;
@@ -675,8 +684,7 @@ static Bool armada_drm_PreInit(ScrnInfoPtr pScrn, int flags)
 		break;
 	default:
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "Given depth (%d) is not supported.\n",
-			   pScrn->depth);
+			"Given depth (%d) is not supported.\n", pScrn->depth);
 		goto fail;
 	}
 

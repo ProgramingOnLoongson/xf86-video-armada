@@ -477,6 +477,10 @@ static Bool armada_drm_ScreenInit(SCREEN_INIT_ARGS_DECL)
 		use_kms_bo = xf86ReturnOptValBool(arm->Options, OPTION_USE_KMS_BO, TRUE);
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " Using KMS BO. \n");
 	}
+	else
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " Not Using KMS BO. \n");
+	}
 
 	if (arm->accel)
 	{
@@ -485,12 +489,17 @@ static Bool armada_drm_ScreenInit(SCREEN_INIT_ARGS_DECL)
 		if (!use_kms_bo)
 			mgr = NULL;
 
-		if (!arm->accel_ops->screen_init(pScreen, mgr)) {
+		if (!arm->accel_ops->screen_init(pScreen, mgr))
+		{
 			xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-				   "[drm] Vivante initialization failed, running unaccelerated\n");
+				"[drm] Vivante initialization failed, running unaccelerated\n");
 			arm->accel = FALSE;
 			arm->accel_ops = NULL;
 		}
+	}
+	else
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, " Not Accel. \n");
 	}
 
 	if (!common_drm_PostScreenInit(pScreen))

@@ -851,9 +851,10 @@ Bool common_drm_PostScreenInit(ScreenPtr pScreen)
 	miDCInitialize(pScreen, xf86GetPointerScreenFuncs());
 
 	drm->hw_cursor = xf86ReturnOptValBool(drm->Options,
-					      OPTION_HW_CURSOR,
-					      drm->has_hw_cursor);
-	if (drm->hw_cursor && !drm->has_hw_cursor) {
+					OPTION_HW_CURSOR, drm->has_hw_cursor);
+
+	if (drm->hw_cursor && !drm->has_hw_cursor)
+	{
 		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 			   "No hardware cursor support - disabling hardware cursors\n");
 		drm->hw_cursor = FALSE;
@@ -868,10 +869,11 @@ Bool common_drm_PostScreenInit(ScreenPtr pScreen)
 			      HARDWARE_CURSOR_AND_SOURCE_WITH_MASK |
 			      HARDWARE_CURSOR_SOURCE_MASK_INTERLEAVE_64 |
 			      HARDWARE_CURSOR_UPDATE_UNHIDDEN |
-			      HARDWARE_CURSOR_ARGB)) {
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-			   "Using hardware cursors\n");
-	} else {
+			      HARDWARE_CURSOR_ARGB))
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using hardware cursors\n");
+	}
+	else {
 		drm->hw_cursor = FALSE;
 	}
 
@@ -879,20 +881,19 @@ Bool common_drm_PostScreenInit(ScreenPtr pScreen)
 	pScreen->CloseScreen = common_drm_CloseScreen;
 
 	if (!xf86CrtcScreenInit(pScreen)) {
-		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "[drm] failed to initialize screen\n");
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "[drm] failed to initialize screen\n");
 		return FALSE;
 	}
 
 	if (!miCreateDefColormap(pScreen)) {
-		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "[drm] failed to initialize default colormap\n");
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+				"[drm] failed to initialize default colormap\n");
 		return FALSE;
 	}
 
 	if (!xf86HandleColormaps(pScreen, 256, 8, common_drm_LoadPalette, NULL,
-				 CMAP_RELOAD_ON_MODE_SWITCH |
-				 CMAP_PALETTED_TRUECOLOR)) {
+				 CMAP_RELOAD_ON_MODE_SWITCH | CMAP_PALETTED_TRUECOLOR))
+	{
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			   "[drm] failed to initialize colormap handler\n");
 		return FALSE;
@@ -912,11 +913,12 @@ Bool common_drm_PostScreenInit(ScreenPtr pScreen)
 #ifdef HAVE_UDEV
 	if (!common_drm_udev_init(pScreen)) {
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "[drm] failed to connect with udev: %s\n",
-			   strerror(errno));
+			   "[drm] failed to connect with udev: %s\n", strerror(errno));
 		return FALSE;
 	}
 #endif
+
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, " [drm] Post Screen Init done. \n");
 
 	return TRUE;
 }
@@ -935,7 +937,8 @@ void common_drm_AdjustFrame(ADJUST_FRAME_ARGS_DECL)
 	xf86OutputPtr output = xf86_config->output[xf86_config->compat_output];
 	xf86CrtcPtr crtc = output->crtc;
 
-	if (crtc && crtc->enabled) {
+	if (crtc && crtc->enabled)
+	{
 		int saved_x = crtc->x;
 		int saved_y = crtc->y;
 		int ret;
@@ -950,6 +953,7 @@ void common_drm_AdjustFrame(ADJUST_FRAME_ARGS_DECL)
 			crtc->y = saved_y;
 		}
 	}
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, " [drm] Adjust Frame done. \n");
 }
 
 Bool common_drm_EnterVT(VT_FUNC_ARGS_DECL)
@@ -978,8 +982,7 @@ Bool common_drm_EnterVT(VT_FUNC_ARGS_DECL)
 		struct common_crtc_info *drmc = common_crtc(crtc);
 
 		if (!crtc->enabled)
-			drmModeSetCrtc(drmc->drm_fd, drmc->drm_id,
-				       0, 0, 0, NULL, 0, NULL);
+			drmModeSetCrtc(drmc->drm_fd, drmc->drm_id, 0, 0, 0, NULL, 0, NULL);
 	}
 
 	return TRUE;
@@ -1176,8 +1179,7 @@ int common_drm_queue_msc_event(ScrnInfoPtr pScrn, xf86CrtcPtr crtc,
 	ret = drmWaitVBlank(drm->fd, &vbl);
 	if (ret)
 		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			   "%s: %s failed: %s\n", func,
-			   __FUNCTION__, strerror(errno));
+			"%s: %s failed: %s\n", func, __FUNCTION__, strerror(errno));
 	else
 		*msc = common_drm_frame_to_msc(crtc, vbl.reply.sequence);
 

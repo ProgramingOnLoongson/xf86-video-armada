@@ -1035,7 +1035,8 @@ PixmapPtr etnaviv_pixmap_from_dmabuf(ScreenPtr pScreen, int fd,
 
 	pScreen->ModifyPixmapHeader(pixmap, width, height, 0, 0, stride, NULL);
 
-	if (!etnaviv_pixmap_attach_dmabuf(etnaviv, pixmap, fmt, fd)) {
+	if (!etnaviv_pixmap_attach_dmabuf(etnaviv, pixmap, fmt, fd))
+	{
 		etnaviv->DestroyPixmap(pixmap);
 		return NullPixmap;
 	}

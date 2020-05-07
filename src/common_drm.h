@@ -139,9 +139,14 @@ void common_drm_FreeScreen(FREE_SCREEN_ARGS_DECL);
 /* Present extension support */
 Bool common_present_init(ScreenPtr pScreen);
 
+// entity related
 struct common_drm_device *common_entity_get_dev(int entity_num);
+void common_entity_set_dev(int entity_num, struct common_drm_device *dev);
+
+
 struct common_drm_device *common_alloc_dev(int entity_num, int fd,
 	const char *path, Bool ddx_managed_master);
+
 Bool common_drm_fd_is_master(int fd);
 Bool common_drm_get_master(struct common_drm_device *drm_dev);
 void common_drm_put_master(struct common_drm_device *drm_dev);

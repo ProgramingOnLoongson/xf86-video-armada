@@ -1243,25 +1243,6 @@ int common_drm_vblank_wait(ScrnInfoPtr pScrn, xf86CrtcPtr crtc,
 }
 
 
-static int common_entity_key = -1;
-
-struct common_drm_device *common_entity_get_dev(int entity_num)
-{
-	if (common_entity_key == -1)
-		common_entity_key = xf86AllocateEntityPrivateIndex();
-	if (common_entity_key == -1)
-		return NULL;
-
-	return xf86GetEntityPrivate(entity_num, common_entity_key)->ptr;
-}
-
-static void common_entity_set_dev(int entity_num, struct common_drm_device *dev)
-{
-	if (common_entity_key == -1)
-		common_entity_key = xf86AllocateEntityPrivateIndex();
-
-	xf86GetEntityPrivate(entity_num, common_entity_key)->ptr = dev;
-}
 
 struct common_drm_device *common_alloc_dev(int entity_num, int fd,
 	const char *path, Bool ddx_managed_master)

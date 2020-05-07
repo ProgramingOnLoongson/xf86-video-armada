@@ -49,6 +49,7 @@ struct common_drm_info {
 	drmModeResPtr mode_res;
 	drmEventContext event_context;
 
+
 	struct common_drm_event *flip_event;
 	xf86CrtcPtr flip_ref_crtc;
 	unsigned int flip_count;

@@ -200,7 +200,7 @@ static const OptionInfoRec *armada_available_options(int chipid, int busid)
 			opts[k++] = options[i][j];
 		}
 	}
-		
+
 	opts[k].token = -1;
 	return opts;
 }
@@ -300,29 +300,28 @@ static struct common_drm_device *armada_create_dev(int entity_num,
 	return NULL;
 }
 
-static int armada_create_screen(DriverPtr drv, int entity_num,
-	struct common_drm_device *drm_dev)
-{
-	ScrnInfoPtr pScrn;
 
-	pScrn = xf86AllocateScreen(drv, 0);
-	if (!pScrn)
-		return FALSE;
-
-	xf86AddEntityToScreen(pScrn, entity_num);
-
-	armada_init_screen(pScrn);
-
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Added screen for KMS device %s\n", drm_dev->kms_path);
-
-	return TRUE;
-}
-
-static Bool armada_platform_probe(DriverPtr drv, int entity_num, int flags,
+static Bool armada_platform_probe(DriverPtr driver, int entity_num, int flags,
 	struct xf86_platform_device *dev, intptr_t match_data)
 {
+	ScrnInfoPtr pScrn;
 	struct common_drm_device *drm_dev;
+	int scr_flags = 0;
+
+	const char *path = xf86_platform_device_odev_attributes(dev)->path;
+
+	xf86Msg( X_INFO, "Platform probe: entity number: %d \n", entity_num);
+
+	if (flags & PLATFORM_PROBE_GPU_SCREEN)
+	{
+		scr_flags = XF86_ALLOCATE_GPU_SCREEN;
+		xf86Msg( X_INFO, "XF86_ALLOCATE_GPU_SCREEN \n");
+	}
+
+	if ( path )
+	{
+		xf86Msg( X_INFO, "Platform probe: path: %s \n", path);
+	}
 
 	drm_dev = common_entity_get_dev(entity_num);
 	if (!drm_dev)
@@ -330,7 +329,26 @@ static Bool armada_platform_probe(DriverPtr drv, int entity_num, int flags,
 	if (!drm_dev)
 		return FALSE;
 
-	return armada_create_screen(drv, entity_num, drm_dev);
+//	return armada_create_screen(drv, entity_num, drm_dev);
+
+	pScrn = xf86AllocateScreen(driver, scr_flags);
+
+	if ( NULL == pScrn ) {
+		return FALSE;
+	}
+
+	if (xf86IsEntitySharable(entity_num)) {
+		xf86SetEntityShared(entity_num);
+	}
+
+	xf86AddEntityToScreen(pScrn, entity_num);
+
+	armada_init_screen(pScrn);
+
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "using drv: %s\n", path ? path : "default device");
+
+	return TRUE;
 }
 #endif
 
@@ -384,6 +402,7 @@ static XF86ModuleVersionInfo armada_version = {
 _X_EXPORT XF86ModuleData armadaModuleData = {
 	.vers = &armada_version,
 	.setup = armada_setup,
+	.teardown = NULL,
 };
 
 #endif /* XFree86LOADER */

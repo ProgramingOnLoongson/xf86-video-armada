@@ -15,7 +15,7 @@
 #include "etnaviv_accel.h"
 #include "etnadrm.h"
 
-static pointer etnadrm_setup(pointer module, pointer opts, int *errmaj,
+static void * etnadrm_setup(pointer module, pointer opts, int *errmaj,
 	int *errmin)
 {
 	int fd;
@@ -24,7 +24,7 @@ static pointer etnadrm_setup(pointer module, pointer opts, int *errmaj,
 	if (fd != -1) {
 		close(fd);
 		armada_register_accel(&etnaviv_ops, module, "etnadrm_gpu");
-		return (pointer) 1;
+		return (void *) 1;
 	}
 
 	if (errmaj)

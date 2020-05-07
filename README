@@ -8,6 +8,7 @@ System as implemented by X.org, supporting these DRM KMS drivers:
 
 	Freescale i.MX
 	Marvell Armada 510 (Dove)
+	Loongson 7a1000
 
 and GPU drivers:
 
@@ -90,8 +91,11 @@ $ ETNA_SRC=$PWD/etna_viv
 $ git clone git://git.armlinux.org.uk/~rmk/xf86-video-armada.git/
 $ cd xf86-video-armada
 $ git checkout unstable-devel
-$ ./autogen.sh --prefix=/usr --disable-vivante --disable-etnaviv \
-  --with-etnaviv-source=$ETNA_SRC
+
+$ ./autogen.sh --prefix=/usr --disable-etnaviv --with-etnaviv-source=$ETNA_SRC
+
+append `--libdir=/usr/lib64` if build on fedora
+
 $ make
 $ make install
 $ cp conf/xorg-sample.conf /etc/X11/xorg.conf

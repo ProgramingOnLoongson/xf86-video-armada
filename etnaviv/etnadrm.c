@@ -94,6 +94,7 @@ static const struct chip_specs specs[] = {
 	},
 };
 
+
 static int chip_specs(struct viv_conn *conn, struct viv_specs *out, int pipe)
 {
 	struct drm_etnaviv_param req;
@@ -113,17 +114,18 @@ static int chip_specs(struct viv_conn *conn, struct viv_specs *out, int pipe)
 	return 0;
 }
 
+
 int etnadrm_open_render(const char *name)
 {
 	drmVersionPtr version;
 	char buf[64];
-	int minor, fd, rc;
-
-	for (minor = 0; minor < 64; minor++) {
+	int fd, rc;
+	unsigned int minor;
+	for (minor = 0; minor < 64; ++minor) {
 		snprintf(buf, sizeof(buf), "%s/card%d", DRM_DIR_NAME,
 			 minor);
 
-		fd = open(buf, O_RDWR);
+		fd = open(buf, O_RDWR | O_CLOEXEC, 0);
 		if (fd == -1)
 			continue;
 
